@@ -1,0 +1,91 @@
+ALB 15
+
+1. Création des Target Groups
+Deux Target Groups : Créez deux Target Groups distincts dans votre console AWS. L'un sera associé aux instances EC2 exécutant votre application Node.js pour les utilisateurs, l'autre pour les administrateurs.
+Auto-Scaling : Configurez l'auto-scaling pour chaque groupe afin d'ajuster automatiquement le nombre d'instances en fonction de la charge.
+
+2. Configuration de l'ALB
+Listener : Créez un listener sur l'ALB qui écoutera sur le port 80 (HTTP) ou 443 (HTTPS).
+Règles de routage : Configurez deux règles de routage :
+Règle pour /user : Cette règle dirigera tout le trafic dont l'hôte ou le chemin commence par /user vers le premier Target Group.
+Règle pour /admin : Cette règle dirigera tout le trafic dont le hôte ou le chemin commence par /admin vers le second Target Group.
+Règle par défaut : Configurez une règle par défaut pour gérer le trafic qui ne correspond à aucune des règles précédentes (par exemple, renvoyer une erreur 404).
+
+3. Application Node.js/Express
+Routes spécifiques : Dans votre application Node.js/Express, créez des routes distinctes pour gérer les requêtes /user et /admin. Ces routes peuvent contenir la logique métier spécifique à chaque type d'utilisateur.
+Écoute sur un port spécifique : Configurez votre application pour écouter sur un port spécifique (par exemple, 3000), car c'est sur ce port que l'ALB enverra les requêtes.
+Code Node.js/Express (Exemple)
+JavaScript
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.get('/user', (req, res) => {
+  res.send('Bienvenue utilisateur !');
+});
+
+app.get('/admin', (req, res) => {
+  res.send('Zone administrateur');
+});
+
+app.listen(port, () => {
+  console.log(`Serveur en écoute sur le port ${port}`);
+});
+Utilisez ce code avec précaution.
+
+Points clés à retenir
+Flexibilité de l'ALB : Les ALB permettent une configuration très fine du routage du trafic, en fonction de nombreux critères (hôte, chemin, requête, etc.).
+Importance des Target Groups : Chaque Target Group regroupe un ensemble d'instances ayant des caractéristiques similaires (environnement, application, etc.).
+Sécurité : Il est important de configurer correctement les groupes de sécurité pour protéger vos instances EC2.
+Scalabilité : L'auto-scaling permet d'adapter automatiquement la capacité de votre infrastructure aux variations de charge.
+
+
+--------------------------------------------------------
+
+ALB 16
+
+Nous souhaitons mettre en place une architecture AWS où :
+
+Un ALB distribue le trafic vers un groupe cible (Target Group).
+Ce groupe cible est alimenté par un Auto Scaling Group qui lance des instances EC2.
+Les instances EC2 écoutent sur le port 5000 (port de notre application Node.js/Express).
+L'ALB, lui, communique avec les instances sur le port 80.
+
+1. Création du Target Group
+Port du Target Group : Configurez le Target Group pour écouter sur le port 80, car c'est sur ce port que l'ALB enverra le trafic.
+Protocole : Choisissez HTTP ou HTTPS selon votre configuration.
+
+2. Configuration de l'ALB
+Listener : Créez un listener sur l'ALB qui écoute sur le port 80 (HTTP) ou 443 (HTTPS).
+Règles de routage : Configurez une règle de routage simple qui envoie tout le trafic vers le Target Group créé précédemment.
+
+3. Création de l'Auto Scaling Group
+Lancement de l'instance : Configurez l'Auto Scaling Group pour lancer des instances EC2 avec votre image AMI contenant l'application Node.js/Express.
+Groupe cible : Associez l'Auto Scaling Group au Target Group créé précédemment.
+Configuration de l'instance : Assurez-vous que :
+Le port 5000 est ouvert dans le groupe de sécurité de l'instance pour permettre à votre application Node.js d'écouter.
+L'instance est configurée pour démarrer automatiquement votre application Node.js au démarrage.
+
+4. Application Node.js/Express
+
+Écoute sur le port 5000 : Assurez-vous que votre application Node.js écoute sur le port 5000 :
+JavaScript
+const express = require('express');
+const app = express();
+const port = 5000;
+
+// ... votre code d'application
+
+app.listen(port, () => {
+  console.log(`Serveur en écoute sur le port ${port}`);
+});
+Utilisez ce code avec précaution.
+
+Diagramme
+
+Explication du fonctionnement
+Un utilisateur envoie une requête HTTP à l'ALB.
+L'ALB, selon les règles de routage, envoie la requête à un instance disponible dans le Target Group.
+L'instance reçoit la requête sur le port 80, mais elle la redirige vers le port 5000 où votre application Node.js est en écoute.
+Votre application Node.js traite la requête et renvoie une réponse.
+La réponse est renvoyée à l'ALB, puis à l'utilisateur.
